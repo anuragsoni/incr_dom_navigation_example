@@ -28,6 +28,9 @@ let apply_action action model state =
 
 let update_visibility m = m
 
+(** Listen for the Dom hash change event.
+    This returns a Deferred that will be fulfilled
+    when the browser hashchange event is fired *)
 let route_change_event () =
   let open Js_of_ocaml in
   let el = ref Js.null in
@@ -41,6 +44,7 @@ let route_change_event () =
                                              Navigation.location_of_js (Dom_html.window##.location))); Js._true)) (Js.bool true));
   Ivar.read ivar
 
+(** Bind to the hash change event for the lifecycle of the application. *)
 let rec watch_route_changes ~schedule =
   let%bind ev = route_change_event () in
   schedule (Action.UrlChange ev);
