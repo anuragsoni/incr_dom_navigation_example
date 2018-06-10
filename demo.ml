@@ -31,31 +31,19 @@ let update_visibility m = m
 (** Listen for the Dom hash change event.
     This returns a Deferred that will be fulfilled
     when the browser hashchange event is fired *)
-let route_change_event () =
+let route_change_event ~f =
   let open Js_of_ocaml in
-  let el = ref Js.null in
-  let ivar = Ivar.create () in
-  let cancel () = Js.Opt.iter !el Dom_html.removeEventListener in
-  el := Js.some
-      (Dom.addEventListener
-         Dom_html.window
-         Dom_html.Event.hashchange (Dom_html.handler
-                                      (fun (ev : #Dom_html.event Js.t) ->
-                                         cancel (); (* Cancel the event listener *)
-                                         (Ivar.fill ivar (
-                                             Navigation.location_of_js (Dom_html.window##.location))); Js._true))
-         Js._false);
-  Ivar.read ivar
-
-(** Bind to the hash change event for the lifecycle of the application. *)
-let rec watch_route_changes ~schedule =
-  let%bind ev = route_change_event () in
-  schedule (Action.UrlChange ev);
-  watch_route_changes ~schedule
+  Js.some
+    (Dom.addEventListener
+       Dom_html.window
+       Dom_html.Event.hashchange (Dom_html.handler
+                                    (fun (ev : #Dom_html.event Js.t) ->
+                                       f (Navigation.location_of_js (Dom_html.window##.location)); Js._true))
+       Js._false)
 
 let on_startup ~schedule _ =
   let state = {State.schedule} in
-  let _ = watch_route_changes ~schedule in
+  let _ = route_change_event ~f:(fun loc -> schedule (Action.UrlChange loc)) in
   Async_kernel.return state
 
 let on_display ~old:_ _ _ = ()
