@@ -35,13 +35,16 @@ let route_change_event () =
   let open Js_of_ocaml in
   let el = ref Js.null in
   let ivar = Ivar.create () in
+  let cancel () = Js.Opt.iter !el Dom_html.removeEventListener in
   el := Js.some
       (Dom.addEventListener
          Dom_html.window
          Dom_html.Event.hashchange (Dom_html.handler
                                       (fun (ev : #Dom_html.event Js.t) ->
-                                         (Ivar.fill_if_empty ivar (
-                                             Navigation.location_of_js (Dom_html.window##.location))); Js._true)) (Js.bool true));
+                                         cancel (); (* Cancel the event listener *)
+                                         (Ivar.fill ivar (
+                                             Navigation.location_of_js (Dom_html.window##.location))); Js._true))
+         Js._false);
   Ivar.read ivar
 
 (** Bind to the hash change event for the lifecycle of the application. *)
