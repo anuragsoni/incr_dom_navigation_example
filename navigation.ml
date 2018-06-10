@@ -11,7 +11,7 @@ type location =
   ; pathname: string
   ; search: string
   ; hash: string }
-[@@deriving sexp]
+[@@deriving sexp, compare, fields]
 
 let location_of_js location =
   { href= location ##. href |> Js.to_string

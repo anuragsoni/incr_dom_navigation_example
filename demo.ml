@@ -3,7 +3,7 @@ open Incr_dom
 open Async_kernel
 
 module Model = struct
-  type t = {message: string; history: string list}
+  type t = {message: string; history: Navigation.location list}
   [@@deriving sexp, fields, compare]
 
   let update t message = {t with message}
@@ -27,7 +27,7 @@ end
 let apply_action action model state =
   match (action : Action.t) with
   | Update msg -> Model.update model msg
-  | UrlChange location -> Model.update_history model location.hash
+  | UrlChange location -> Model.update_history model location
 
 let update_visibility m = m
 
@@ -44,9 +44,14 @@ let route_change_event () =
                                              Navigation.location_of_js (Dom_html.window##.location))); Js._true)) (Js.bool true));
   Ivar.read ivar
 
+let rec watch_route_changes ~schedule =
+  let%bind ev = route_change_event () in
+  schedule (Action.UrlChange ev);
+  watch_route_changes ~schedule
+
 let on_startup ~schedule _ =
   let state = {State.schedule} in
-  upon (route_change_event ()) (fun ev -> State.schedule state (Action.UrlChange ev));
+  let _ = watch_route_changes ~schedule in
   Async_kernel.return state
 
 let on_display ~old:_ _ _ = ()
@@ -57,9 +62,12 @@ let view (m: Model.t Incr.t) ~inject =
   let view_link name =
     Node.li [] [Node.a [Attr.href ("#" ^ "/" ^ name)] [Node.text name]]
   in
+  let view_location location =
+    Node.li [] [Node.text ((Navigation.pathname location) ^ (Navigation.hash location))]
+  in
   let%map message =
     let%map message_text = m >>| Model.history in
-    Node.ul [] (List.map ~f:(fun x -> Node.text x) message_text)
+    Node.ul [] (List.map ~f:(fun x -> view_location x) message_text)
   in
   Node.body []
     [ Node.div []
