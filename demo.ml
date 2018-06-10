@@ -40,7 +40,7 @@ let route_change_event () =
          Dom_html.window
          Dom_html.Event.hashchange (Dom_html.handler
                                       (fun (ev : #Dom_html.event Js.t) ->
-                                         (Ivar.fill ivar (
+                                         (Ivar.fill_if_empty ivar (
                                              Navigation.location_of_js (Dom_html.window##.location))); Js._true)) (Js.bool true));
   Ivar.read ivar
 
