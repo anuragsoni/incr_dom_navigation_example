@@ -3,18 +3,16 @@ open Incr_dom
 open Async_kernel
 
 module Model = struct
-  type t = {message: string; history: Navigation.location list}
+  type t = {history: Navigation.location list}
   [@@deriving sexp, fields, compare]
 
-  let update t message = {t with message}
-
-  let update_history t location = {t with history= location :: t.history}
+  let update_history t location = {history= location :: t.history}
 
   let cutoff t1 t2 = compare t1 t2 = 0
 end
 
 module Action = struct
-  type t = Update of string | UrlChange of Navigation.location
+  type t = UrlChange of Navigation.location
   [@@deriving sexp]
 
   let should_log _ = true
@@ -26,7 +24,6 @@ end
 
 let apply_action action model state =
   match (action : Action.t) with
-  | Update msg -> Model.update model msg
   | UrlChange location -> Model.update_history model location
 
 let update_visibility m = m
@@ -65,9 +62,9 @@ let view (m: Model.t Incr.t) ~inject =
   let view_location location =
     Node.li [] [Node.text ((Navigation.pathname location) ^ (Navigation.hash location))]
   in
-  let%map message =
-    let%map message_text = m >>| Model.history in
-    Node.ul [] (List.map ~f:(fun x -> view_location x) message_text)
+  let%map history =
+    let%map history_list = m >>| Model.history in
+    Node.ul [] (List.map ~f:(fun x -> view_location x) history_list)
   in
   Node.body []
     [ Node.div []
@@ -76,4 +73,4 @@ let view (m: Model.t Incr.t) ~inject =
             (List.map ~f:view_link
                ["bears"; "cats"; "dogs"; "elephants"; "fish"]) ]
     ; Node.h1 [] [Node.text "History"]
-    ; message ]
+    ; history ]

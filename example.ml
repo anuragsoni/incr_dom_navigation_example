@@ -4,4 +4,4 @@ open! Js_of_ocaml
 let () =
   Start_app.simple
   (module Demo)
-  ~initial_model:(Demo.Model.Fields.create ~message:"" ~history:[])
+  ~initial_model:(Demo.Model.Fields.create ~history:[])
