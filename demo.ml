@@ -28,9 +28,8 @@ let apply_action action model state =
 
 let update_visibility m = m
 
-(** Listen for the Dom hash change event.
-    This returns a Deferred that will be fulfilled
-    when the browser hashchange event is fired *)
+(** Listen for the Dom hash change event. This binds to the event
+    for the lifecycle of the application. *)
 let route_change_event ~f =
   let open Js_of_ocaml in
   Js.some
